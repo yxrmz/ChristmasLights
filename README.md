@@ -1,2 +1,3 @@
 # ChristmasLights
- Гирлянда на адресной ленте и Arduino
+ Forked from AlexGyver/ChristmasLights
+ Ported to ESP32, added Web Controls
