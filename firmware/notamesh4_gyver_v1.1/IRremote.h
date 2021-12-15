@@ -21,7 +21,7 @@
 //------------------------------------------------------------------------------
 // The ISR header contains several useful macros the user may wish to use
 //
-#include "IRremoteInt.h"
+//#include "IRremoteInt.h"
 
 //------------------------------------------------------------------------------
 // Supported IR protocols
@@ -78,25 +78,27 @@
 //
 typedef
 enum {
-  UNKNOWN      = -1,
-  UNUSED       =  0,
-  RC5,
-  RC6,
-  NEC,
-  SONY,
-  PANASONIC,
-  JVC,
-  SAMSUNG,
-  WHYNTER,
-  AIWA_RC_T501,
-  LG,
-  SANYO,
-  MITSUBISHI,
-  DISH,
-  SHARP,
-  DENON,
-  PRONTO,
-  LEGO_PF,
+//  UNKNOWN      = -1,
+//  UNUSED       =  0,
+//  UNKNOWN      = 0,
+  UNUSED       =  -1,
+//  RC5,
+//  RC6,
+//  NEC,
+//  SONY,
+//  PANASONIC,
+//  JVC,
+//  SAMSUNG,
+//  WHYNTER,
+//  AIWA_RC_T501,
+//  LG,
+//  SANYO,
+//  MITSUBISHI,
+//  DISH,
+//  SHARP,
+//  DENON,
+//  PRONTO,
+//  LEGO_PF,
 }
 decode_type_t;
 

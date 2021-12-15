@@ -55,6 +55,24 @@ uint16_t NUM_LEDS;                                          // Number of LED's w
 uint16_t KolLed;
 #endif
 
+#ifdef ESP32
+  #include <WiFi.h>
+  #include <AsyncTCP.h>
+#else
+  #include <ESP8266WiFi.h>
+  #include <ESPAsyncTCP.h>
+#endif
+#include <ESPAsyncWebServer.h>
+//#include <WebServer.h>
+#include <ArduinoOTA.h>
+
+const char* ssid = "MY_SSID";
+const char* password = "MY_PASSWORD";
+
+const char* PARAM_INPUT_1 = "lup";
+const char* PARAM_INPUT_2 = "ldown";
+//int ledmode = 0;
+
 int max_bright = 255;                                     // Overall brightness definition. It can be changed on the fly.
 
 struct CRGB leds[MAX_LEDS];                                   // Initialize our LED array. We'll be using less in operation.
@@ -143,6 +161,7 @@ void bootme();
 void meshwait();
 void getirl();
 void demo_check();
+//void SetMode(uint8_t Mode); 
 
 // Display functions -----------------------------------------------------------------------
 
@@ -172,6 +191,183 @@ void demo_check();
 
 GButton btn(BTN_PIN);
 
+//Web server definitions
+AsyncWebServer server(80);
+//WebServer server(80);
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html>
+<head>
+  <title>Christmas Web Server</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    html {font-family: Arial; display: inline-block;}
+    h2 {font-size: 2.0rem; color: blue; font-weight: bold; text-align: center;}
+    h3 {font-size: 2.0rem; text-align: center;}
+    h4 {font-size: 2.2rem; color: red; text-align: center;}
+    p {font-size: 3.0rem; color: red; font-weight: bold; text-align: center;}
+    button {font-size: 2.0rem; font-weight: bold; border-radius: 5px; padding: 5px; display: inline-block; width: 100%%; height: 100%%;}
+    button:focus {background-color: #FFFF22;}
+    table { margin-left: auto;  margin-right: auto;}
+    body {max-width: 600px; margin:0px auto; padding-bottom: 25px;}
+    .switch {position: relative; display: inline-block; width: 120px; height: 68px} 
+    .switch input {display: none}
+    .slider {position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 34px}
+    .slider:before {position: absolute; content: ""; height: 52px; width: 52px; left: 8px; bottom: 8px; background-color: #fff; -webkit-transition: .4s; transition: .4s; border-radius: 68px}
+    input:checked+.slider {background-color: #2196F3}
+    input:checked+.slider:before {-webkit-transform: translateX(52px); -ms-transform: translateX(52px); transform: translateX(52px)}
+    input[type=range][orient=vertical]
+{
+    writing-mode: bt-lr; /* IE */
+    -webkit-appearance: slider-vertical; /* WebKit */
+    width: 8px;
+    height: 300px;
+    padding: 0 5px;
+    text-align: right;
+}
+  </style>
+</head>
+<body>
+  %BUTTONPLACEHOLDER%
+<table id="modeselector">
+<tr>
+<td><button id="b1" onclick="select_mode(this)">1</button></td>
+<td><button id="b2" onclick="select_mode(this)">2</button></td>
+<td><button id="b3" onclick="select_mode(this)">3</button></td>
+<td><button id="b4" onclick="select_mode(this)">4</button></td>
+<td><button id="b5" onclick="select_mode(this)">5</button></td></tr>
+<tr>
+<td><button id="b6" onclick="select_mode(this)">6</button></td>
+<td><button id="b7" onclick="select_mode(this)">7</button></td>
+<td><button id="b8" onclick="select_mode(this)">8</button></td>
+<td><button id="b9" onclick="select_mode(this)">9</button></td>
+<td><button id="b10" onclick="select_mode(this)">10</button></td></tr>
+<tr>
+<td><button id="b11" onclick="select_mode(this)">11</button></td>
+<td><button id="b12" onclick="select_mode(this)">12</button></td>
+<td><button id="b13" onclick="select_mode(this)">13</button></td>
+<td><button id="b14" onclick="select_mode(this)">14</button></td>
+<td><button id="b15" onclick="select_mode(this)">15</button></td></tr>
+<tr>
+<td><button id="b16" onclick="select_mode(this)">16</button></td>
+<td><button id="b17" onclick="select_mode(this)">17</button></td>
+<td><button id="b18" onclick="select_mode(this)">18</button></td>
+<td><button id="b19" onclick="select_mode(this)">19</button></td>
+<td><button id="b20" onclick="select_mode(this)">20</button></td></tr>
+<tr>
+<td><button id="b21" onclick="select_mode(this)">21</button></td>
+<td><button id="b22" onclick="select_mode(this)">22</button></td>
+<td><button id="b23" onclick="select_mode(this)">23</button></td>
+<td><button id="b24" onclick="select_mode(this)">24</button></td>
+<td><button id="b25" onclick="select_mode(this)">25</button></td></tr>
+<tr>
+<td><button id="b26" onclick="select_mode(this)">26</button></td>
+<td><button id="b27" onclick="select_mode(this)">27</button></td>
+<td><button id="b28" onclick="select_mode(this)">28</button></td>
+<td><button id="b29" onclick="select_mode(this)">29</button></td>
+<td><button id="b30" onclick="select_mode(this)">30</button></td></tr>
+<tr>
+<td><button id="b31" onclick="select_mode(this)">31</button></td>
+<td><button id="b32" onclick="select_mode(this)">32</button></td>
+<td><button id="b33" onclick="select_mode(this)">33</button></td>
+<td><button id="b34" onclick="select_mode(this)">34</button></td>
+<td><button id="b35" onclick="select_mode(this)">35</button></td></tr>
+<tr>
+<td><button id="b36" onclick="select_mode(this)">36</button></td>
+<td><button id="b37" onclick="select_mode(this)">37</button></td>
+<td><button id="b38" onclick="select_mode(this)">38</button></td>
+<td><button id="b39" onclick="select_mode(this)">39</button></td>
+<td><button id="b40" onclick="select_mode(this)">40</button></td></tr>
+</table>
+<script>function toggleCheckbox(param, state) {
+  console.log("Button is ")
+  console.log(state)
+  var xhr = new XMLHttpRequest();/*
+  if(state){ xhr.open("GET", "/update?state=1", true); }
+  else { xhr.open("GET", "/update?state=0", true); }*/
+  xhr.open("GET", "/update?" + param + "=" + state, true);
+  xhr.send();
+}
+
+setInterval(function() {
+  // Call a function repetatively with 0.5 Second interval
+  getData();
+}, 500); //500mSeconds update rate
+
+function getData() {
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      document.getElementById("ledc").innerHTML =
+      this.responseText;
+    }
+  };
+  xhttp.open("GET", "getLedMode", true);
+  xhttp.send();
+}
+//function updateC(a) {
+//  var span = document.getElementById("ledc")
+//  text = span.innerHTML
+//  text = parseInt(text)
+//  text += a
+//  span.innerHTML = text.toString()
+//}
+
+//var b_lup = document.getElementById("lup")
+//b_lup.onmousedown = function(e) {
+//  console.log("lup button down")
+//  toggleCheckbox("lup", 1)
+  //updateC(1)
+//}
+//b_lup.onmouseup = function(e) {
+//  console.log("lup button up")
+//  toggleCheckbox("lup", 0)
+//}
+
+//var b_ldown = document.getElementById("ldown")
+//b_ldown.onmousedown = function(e) {
+//  console.log("ldown button down")
+//  toggleCheckbox("ldown", 1)
+  //updateC(-1)
+//}
+//b_ldown.onmouseup = function(e) {
+//  console.log("ldown button up")
+//  toggleCheckbox("ldown", 0)
+//}
+function select_mode(btn) {
+  var xhr = new XMLHttpRequest();/*
+  if(state){ xhr.open("GET", "/update?state=1", true); }
+  else { xhr.open("GET", "/update?state=0", true); }*/
+  xhr.open("GET", "/setmode?mode=" + btn.innerHTML, true);
+  xhr.send();  
+}
+</script>
+</body>
+</html>
+)rawliteral";
+
+// Replaces placeholder with button section in your web page
+String processor(const String& var){
+  //Serial.println(var);
+  if(var == "BUTTONPLACEHOLDER"){
+    String buttons ="";
+    // button html
+    buttons += "<h2>XmsTree Web Server</h2>";
+    buttons += "<h3>Current LED Mode: <p id=\"ledc\">";
+    buttons += ledMode;
+    buttons += "</p></h3>";
+    buttons += "<h3>Select mode</h3>";
+    //buttons += "<br><button style=\"width:100px;height:50px\" id=\"lup\">LEDMODE UP</button><br><button style=\"width:100px;height:50px\" id=\"ldown\">LEDMODE DOWN</button>";
+    return buttons;
+  }
+  return String();
+}
+bool changedFromWeb = false;
+
+//void handleLedMode() {
+// String ledValue = String(ledMode);
+// return ledValue;
+// server.send(200, "text/plane", ledValue); //Send LED mode only to client ajax request
+//}
 /*------------------------------------------------------------------------------------------
   --------------------------------------- Start of code --------------------------------------
   ------------------------------------------------------------------------------------------*/
@@ -187,6 +383,87 @@ void setup() {
   Serial.println(F(" ")); Serial.println(F("---SETTING UP---"));
 #endif
   delay(1000);                                                                    // Slow startup so we can re-upload in the case of errors.
+
+//WI-FI and web server setup
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi..");
+  }
+
+  // Print ESP Local IP Address
+  Serial.println(WiFi.localIP());
+  ArduinoOTA.begin();
+
+  // Route for root / web page
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/html", index_html, processor);
+  });
+
+  server.on("/getLedMode", HTTP_GET, [](AsyncWebServerRequest *request){
+//    request->send_P(200, "text/plane", handleLedMode);
+    char cstr[16];
+    itoa(ledMode, cstr, 10);
+    request->send_P(200, "text/plane", cstr);
+  });
+//  server.on("/getLedMode", handleLedMode);//To get update of LED mode only
+
+  // Send a GET request
+  server.on("/setmode", HTTP_GET, [] (AsyncWebServerRequest *request) {
+    String inputMessage;
+    String inputParam;
+
+    if (request->hasParam("mode")) {
+      inputMessage = request->getParam("mode")->value();
+      inputParam = "mode";
+      newMode = inputMessage.toInt();
+      SetMode(newMode);
+      }
+
+    else {
+      inputMessage = "No message sent";
+      inputParam = "none";
+    }
+    request->send(200, "text/plain", "OK");
+  });
+  // Send a GET request
+  server.on("/update", HTTP_GET, [] (AsyncWebServerRequest *request) {
+    String inputMessage;
+    String inputParam;
+    // GET input1 value on <ESP_IP>/update?state=<inputMessage>
+    if (request->hasParam(PARAM_INPUT_1)) {
+      inputMessage = request->getParam(PARAM_INPUT_1)->value();
+      inputParam = PARAM_INPUT_1;
+      if (inputMessage.toInt() == 1) {
+        newMode = ledMode;
+        if (++newMode >= maxMode) newMode = 0;
+        //changedFromWeb = true;
+        SetMode(newMode);
+      }
+    }
+    else if (request->hasParam(PARAM_INPUT_2)) {
+      inputMessage = request->getParam(PARAM_INPUT_2)->value();
+      inputParam = PARAM_INPUT_2;
+      if (inputMessage.toInt() == 1) {
+        newMode = ledMode;
+        if (--newMode <= 0) newMode = maxMode;
+        //changedFromWeb = true;
+        SetMode(newMode);
+      }
+    }
+    else {
+      inputMessage = "No message sent";
+      inputParam = "none";
+    }
+
+    if (inputMessage.toInt() == 1) {
+      Serial.println("ledmode is");
+      Serial.println(ledMode);
+    }
+    request->send(200, "text/plain", "OK");
+  });
+  // Start server
+  server.begin();
 
 #if IR_ON == 1
   irrecv.enableIRIn();                                                          // Start the receiver
@@ -282,6 +559,10 @@ NUM_LEDS = MAX_LEDS; // Need to ensure NUM_LEDS < MAX_LEDS elsewhere.
 bool onFlag = true;
 //------------------MAIN LOOP---------------------------------------------------------------
 void loop() {
+
+  ArduinoOTA.handle();
+//  delay(2);
+/* 
 #if (USE_BTN == 1)
   static bool stepFlag = false;
   static bool brightDir = true;
@@ -323,10 +604,15 @@ void loop() {
     FastLED.setBrightness(max_bright);
   }
 #endif
-
+*/
 #if ( IR_ON == 1 || KEY_ON == 1 || USE_BTN == 1 )
   getirl();                                                                   // Обработка команд с пульта и аналоговых кнопок
 #endif
+
+//if (changedFromWeb) {
+//  SetMode(newMode);
+//  changedFromWeb = false;
+//}
 
   if (onFlag) {
     demo_check();                                                                 // Работа если включен демонстрационный режим
@@ -401,111 +687,6 @@ void loop() {
 
     if (background) addbackground();                                            // Включить заполнение черного цвета фоном
   }
-
-#if KEY_ON == 1                                                             //Для аналоговых кнопок
-  key_input_new = analogRead(PIN_KEY);                                      //прочитаем аналоговые кнопки
-  if  ( ( ( (key_input - KEY_DELTA) > key_input_new) ||                     //Пришло новое значение отличное от прошлого
-          ( (key_input + KEY_DELTA) < key_input_new) ) &&
-        !key_bounce ) {                                                     // и еще ничего не приходило
-    key_bounce = 1;                                                         //Начинаем обрабатывать
-    key_time = millis();                                                    //Запомним время
-  }
-  else if (  key_bounce &&                                                    //Обрабатываем нажатия
-             ((millis() - key_time) >= 50 )  ) {                               //Закончилось время дребезга
-    key_bounce = 0;                                                       //Больше не обрабатываем
-    key_input = key_input_new;
-#if LOG_ON == 1
-    Serial.print(F("Analog Key: ")); Serial.println(key_input);
-#endif
-
-#if KEY_0 >= KEY_DELTA
-    if  ( ( (KEY_0 - KEY_DELTA) < key_input) &&
-          ( (KEY_0 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_0
-      Protocol = 1;
-      Command = KEY_0;
-    }
-#endif
-#if KEY_1 >= KEY_DELTA
-    if  ( ( (KEY_1 - KEY_DELTA) < key_input) &&
-          ( (KEY_1 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_1
-      Protocol = 1;
-      Command = KEY_1;
-    }
-#endif
-#if KEY_2 >= KEY_DELTA
-    if  ( ( (KEY_2 - KEY_DELTA) < key_input) &&
-          ( (KEY_2 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_2
-      Protocol = 1;
-      Command = KEY_2;
-    }
-#endif
-#if KEY_3 >= KEY_DELTA
-    if  ( ( (KEY_3 - KEY_DELTA) < key_input) &&
-          ( (KEY_3 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_3
-      Protocol = 1;
-      Command = KEY_3;
-    }
-#endif
-#if KEY_4 >= KEY_DELTA
-    if  ( ( (KEY_4 - KEY_DELTA) < key_input) &&
-          ( (KEY_4 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_4
-      Protocol = 1;
-      Command = KEY_4;
-    }
-#endif
-#if KEY_5 >= KEY_DELTA
-    if  ( ( (KEY_5 - KEY_DELTA) < key_input) &&
-          ( (KEY_5 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_5
-      Protocol = 1;
-      Command = KEY_5;
-    }
-#endif
-#if KEY_6 >= KEY_DELTA
-    if  ( ( (KEY_6 - KEY_DELTA) < key_input) &&
-          ( (KEY_6 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_6
-      Protocol = 1;
-      Command = KEY_6;
-    }
-#endif
-#if KEY_7 >= KEY_DELTA
-    if  ( ( (KEY_7 - KEY_DELTA) < key_input) &&
-          ( (KEY_7 + KEY_DELTA) > key_input) )  {                       //Нашли нажатую кнопку KEY_7
-      Protocol = 1;
-      Command = KEY_7;
-    }
-#endif
-  }
-#endif
-
-#if ( IR_ON == 1 || KEY_ON == 1 || USE_BTN == 1 )
-  if ( (IR_Time_Mode > 0) &&                                                //Идет отчет времени
-       ((millis() - IR_Time_Mode) >= 2000 )  ) {                            //И прошло больше 2 секунд
-    IR_Time_Mode = 0;
-    if (IR_New_Mode <= maxMode) SetMode(IR_New_Mode);
-    IR_New_Mode = 0;
-  }
-#endif
-
-#if IR_ON == 1
-  while (!irrecv.isIdle());                                                   // if not idle, wait till complete
-
-  if (irrecv.decode(&results)) {
-    /* respond to button */
-
-    if (!Protocol) {
-      Protocol = 1;                                        // update the values to the newest valid input
-
-#if IR_REPEAT == 1
-      if ( results.value != 0xffffffff)                    //Если не повтор то вставить новую команду
-        Command = results.value;
-      else Protocol = 2;
-#else
-      Command = results.value;
-#endif
-    }
-    irrecv.resume(); // Set up IR to receive next value.
-  }
-#endif
 
   static uint32_t showTimer = 0;
   if (onFlag && millis() - showTimer >= 10) {

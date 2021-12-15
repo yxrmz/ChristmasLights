@@ -19,6 +19,7 @@ void SetMode (uint8_t Mode)
   PolCandle = random8(CANDLE_KOL);
 #endif
 }
+#include <Esp.h>
 
 void getirl() {                                                   // This is the IR function that gets the value and selects/performs command.
 
@@ -871,7 +872,8 @@ void getirl() {                                                   // This is the
 
 void bootme() {                                                 // This is used to reset all the Arduinos so that their millis() counters are all in sync.
 
-  asm volatile("jmp 0");
+//  asm volatile("jmp 0");
+ESP.restart();
 
 } // bootme()
 
